@@ -12,7 +12,9 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/channelz/service"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/johanbrandhorst/grpcweb-wasm-example/backend"
 	"github.com/johanbrandhorst/grpcweb-wasm-example/frontend/bundle"
@@ -31,12 +33,15 @@ func init() {
 		DisableSorting:  true,
 	})
 	// Should only be done from init functions
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(logger.Out, logger.Out, logger.Out))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2WithVerbosity(logger.Out, logger.Out, logger.Out, 9))
 }
 
 func main() {
 	gs := grpc.NewServer()
 	web.RegisterBackendServer(gs, &backend.Backend{})
+	reflection.Register(gs)
+	service.RegisterChannelzServiceToServer(gs)
+
 	wrappedServer := grpcweb.WrapServer(gs)
 
 	handler := func(resp http.ResponseWriter, req *http.Request) {
